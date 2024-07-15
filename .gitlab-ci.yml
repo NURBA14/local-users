@@ -1,0 +1,40 @@
+image: alpine:3.18
+
+stages:
+    - prod
+    - test
+
+deploy-prod:
+    stage: prod
+    before_script:
+        - 'command -v ssh-agent >/dev/null || ( apk add --update openssh )'
+        - eval $(ssh-agent -s)
+        - echo "$SSH_PRIVATE_KEY_SRV11_USER_PROD_API_EDUS" | tr -d '\r' | ssh-add -
+        - mkdir -p ~/.ssh
+        - chmod 700 ~/.ssh
+        - ssh-keyscan $IPADDRESS_SRV11 >> ~/.ssh/known_hosts
+        - chmod 644 ~/.ssh/known_hosts
+        
+    script:
+        - ssh useredus@$IPADDRESS_SRV11 "cd $PROJECT_DIR_PROD && git pull origin main"
+    only:
+        - main
+
+deploy-test:
+    stage: test
+    before_script:
+        - 'command -v ssh-agent >/dev/null || ( apk add --update openssh )'
+        - eval $(ssh-agent -s)
+        - echo "$SSH_PRIVATE_KEY_SRV11_USER_TEST_API_EDUS" | tr -d '\r' | ssh-add -
+        - mkdir -p ~/.ssh
+        - chmod 700 ~/.ssh
+        - ssh-keyscan $IPADDRESS_SRV11 >> ~/.ssh/known_hosts
+        - chmod 644 ~/.ssh/known_hosts
+        
+    script:
+        - ssh tstapiuseredus@$IPADDRESS_SRV11 "cd $PROJECT_DIR_TEST && git pull origin dev"
+    only:
+        - dev
+
+
+
